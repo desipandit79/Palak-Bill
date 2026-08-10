@@ -1,0 +1,18 @@
+{
+  "name": "PALAK INFRA - Bill Software",
+  "short_name": "Bill Software",
+  "description": "Billing and invoice generator for PALAK INFRA",
+  "start_url": "./bill-software.html",
+  "display": "standalone",
+  "background_color": "#e8e6e1",
+  "theme_color": "#14477a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

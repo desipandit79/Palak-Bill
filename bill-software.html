@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill / Invoice Software</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14477a">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --border: #333;
+    --accent: #b8862f;
+    --blue: #14477a;
+    --bg: #f4f2ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #e8e6e1;
+    color: var(--ink);
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  /* ================= FORM PANEL ================= */
+  .form-panel {
+    background: #fff;
+    padding: 22px;
+    overflow-y: auto;
+    max-height: 100vh;
+    border-right: 2px solid #ccc;
+  }
+  .form-panel h2 {
+    font-size: 1.1rem;
+    margin: 0 0 4px;
+    color: var(--blue);
+  }
+  .form-panel .subtitle {
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 18px;
+  }
+  .form-section {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed #ccc;
+  }
+  .form-section h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  .form-row {
+    margin-bottom: 10px;
+  }
+  .form-row label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: #444;
+  }
+  .form-row input,
+  .form-row textarea,
+  .form-row select {
+    width: 100%;
+    padding: 7px 9px;
+    font-size: 0.85rem;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: inherit;
+  }
+  .form-row textarea { resize: vertical; min-height: 44px; }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .item-input-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    background: var(--bg);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .item-input-grid .two-col { margin-bottom: 0; }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: inherit;
+  }
+  .btn-add-item {
+    width: 100%;
+    padding: 9px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.85rem;
+  }
+  .item-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .item-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+    border: 1px solid #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+  }
+  .item-list-row .name { font-weight: 600; }
+  .item-list-row .del {
+    background: none;
+    color: #7a2331;
+    font-size: 1rem;
+    padding: 0 4px;
+  }
+  .toolbar-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-primary { background: var(--blue); color: #fff; padding: 11px; font-size: 0.9rem; }
+  .btn-secondary { background: #555; color: #fff; padding: 10px; font-size: 0.85rem; }
+  .btn-danger { background: #7a2331; color: #fff; padding: 10px; font-size: 0.85rem; }
+
+  .history-list {
+    display: grid;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+    border: 1px solid #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+  .history-item:hover { background: #f0eee9; }
+  .history-item .del { background: none; color: #7a2331; }
+
+  /* ================= CONFIRM OVERLAY ================= */
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20,20,20,0.7);
+    z-index: 500;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 30px 16px;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: #efefef;
+    max-width: 850px;
+    width: 100%;
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .confirm-heading {
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 0 0 14px;
+    text-align: center;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 18px;
+    font-family: Arial, sans-serif;
+  }
+  .confirm-actions button { padding: 12px 26px; font-size: 0.92rem; }
+
+  .invoice {
+    width: 800px;
+    background: #fff;
+    border: 2px solid var(--border);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    height: fit-content;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+  }
+  .invoice-title {
+    text-align: center;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    padding: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+  .top-row { display: flex; border-bottom: 2px solid var(--border); }
+  .top-row .cell {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .top-row .cell b { flex-shrink: 0; }
+  .top-row .cell span.top-value {
+    font-family: var(--font-mono, 'Courier New', monospace);
+    letter-spacing: 0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-row .cell:first-child { border-right: 2px solid var(--border); }
+
+  .company-block { padding: 14px 16px; border-bottom: 2px solid var(--border); }
+  .company-logo { display: block; margin: 0 auto 6px; max-height: 60px; max-width: 200px; object-fit: contain; }
+  .company-name { text-align: center; font-size: 1.7rem; font-weight: bold; letter-spacing: 1px; margin: 4px 0 8px; }
+  .company-sub { text-align: center; font-size: 0.8rem; display: grid; gap: 2px; }
+
+  .meta-row { display: flex; border-bottom: 2px solid var(--border); font-size: 0.85rem; }
+  .meta-row .cell { flex: 1; padding: 8px 12px; }
+  .meta-row .cell:first-child { border-right: 2px solid var(--border); }
+  .meta-row b { margin-right: 4px; }
+
+  .bill-ship-row { display: flex; border-bottom: 2px solid var(--border); }
+  .bill-ship-row .cell { flex: 1; padding: 10px 14px; font-size: 0.85rem; }
+  .bill-ship-row .cell:first-child { border-right: 2px solid var(--border); }
+  .bill-ship-row .label { font-weight: bold; font-size: 0.76rem; text-transform: uppercase; margin-bottom: 6px; display: block; }
+
+  table.items { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  table.items th, table.items td { border: 1px solid var(--border); padding: 5px 6px; text-align: left; }
+  table.items th { background: var(--bg); font-size: 0.66rem; text-transform: uppercase; text-align: center; }
+  table.items .num { text-align: right; }
+  table.items .center { text-align: center; }
+
+  .totals-block { display: flex; border-top: 2px solid var(--border); }
+  .totals-left { flex: 1; padding: 10px 14px; font-size: 0.8rem; border-right: 2px solid var(--border); }
+  .totals-left .label { font-weight: bold; text-transform: uppercase; font-size: 0.73rem; display:block; margin-bottom:6px; }
+  .totals-right { width: 260px; font-size: 0.88rem; }
+  .totals-right .trow { display: flex; justify-content: space-between; padding: 7px 14px; border-bottom: 1px solid var(--border); }
+  .totals-right .trow:last-child { font-weight: bold; font-size: 1.05rem; background: var(--bg); border-bottom: none; }
+
+  .banking-block { padding: 12px 16px; border-top: 2px solid var(--border); font-size: 0.8rem; }
+  .banking-block .label { font-weight: bold; text-transform: uppercase; font-size: 0.73rem; display:block; margin-bottom:6px; }
+  .banking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+  .qr-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #ccc;
+    font-size: 0.78rem;
+  }
+  .qr-block img { border: 1px solid #ccc; padding: 4px; background: #fff; }
+  .signature-line { text-align: right; margin-top: 24px; font-weight: bold; }
+
+  .empty-hint {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+
+  @media print {
+    .form-panel { display: none !important; }
+    .confirm-actions { display: none !important; }
+    .confirm-heading { display: none !important; }
+    .confirm-overlay {
+      position: static !important;
+      background: none !important;
+      padding: 0 !important;
+      display: block !important;
+      }
+    .confirm-box { max-width: 100%; padding: 0; border-radius: 0; background: #fff; }
+    .app { display: block; }
+    .invoice { border: none; width: 100%; }
+    body { background: #fff; }
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= FORM PANEL ================= -->
+  <div class="form-panel">
+    <h2>🧾 Bill / Invoice Software</h2>
+    <div class="subtitle">Fill the Details, Create automatic billds</div>
+
+    <div class="form-section">
+      <h3>Invoice Details</h3>
+      <div class="two-col">
+        <div class="form-row">
+          <label>Invoice / Bill No.</label>
+          <input type="text" id="invoiceNo" value="" oninput="render()">
+        </div>
+        <div class="form-row">
+          <label>Date</label>
+          <input type="date" id="invoiceDate" oninput="render()">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Bill To (Buyer)</h3>
+      <div class="form-row">
+        <label>Name / Company</label>
+        <textarea id="billToName" oninput="render()">KAIZEN INDIA TELECOM AND SOLAR SOLUTIONS  8380075978</textarea>
+      </div>
+      <div class="form-row">
+        <label>GSTIN</label>
+        <input type="text" id="billToGst" value="27AARPH1162M1Z5" oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Ship To</h3>
+      <div class="form-row">
+        <label>Name / Address</label>
+        <textarea id="shipToName" oninput="render()">KRISHNA NAGARA, NEW KHETAN NAGAR, KAULKHED AKOLA</textarea>
+      </div>
+      <div class="form-row">
+        <label>GSTIN</label>
+        <input type="text" id="shipToGst" value="27AARPH1162M1Z5" oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Add Item</h3>
+      <div class="item-input-grid">
+        <div class="form-row" style="margin:0;">
+          <label>Particulars</label>
+          <input type="text" id="itemName" placeholder="e.g. Solar Panel Structure">
+        </div>
+        <div class="two-col">
+          <div class="form-row" style="margin:0;">
+            <label>HSN Code</label>
+            <input type="text" id="itemHsn" placeholder="7308">
+          </div>
+          <div class="form-row" style="margin:0;">
+            <label>Qty</label>
+            <input type="number" id="itemQty" placeholder="1" step="any">
+          </div>
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label>Rate (₹)</label>
+          <input type="number" id="itemRate" placeholder="0.00" step="any">
+        </div>
+        <div class="two-col">
+          <div class="form-row" style="margin:0;">
+            <label>CGST %</label>
+            <input type="number" id="itemCgst" placeholder="2.5" step="any">
+          </div>
+          <div class="form-row" style="margin:0;">
+            <label>SGST %</label>
+            <input type="number" id="itemSgst" placeholder="2.5" step="any">
+          </div>
+        </div>
+      </div>
+      <button class="btn-add-item" id="addItemBtn" onclick="addItem()">+ Add Item to Bill</button>
+
+      <div class="item-list" id="itemListUI"></div>
+    </div>
+
+    <div class="form-section">
+      <h3>Charges &amp; Terms</h3>
+      <div class="form-row">
+        <label>Freight Charges</label>
+        <input type="text" id="freight" value="Extra" oninput="render()">
+      </div>
+      <div class="form-row">
+        <label>Payment Terms</label>
+        <textarea id="paymentTerms" oninput="render()">50% Advance and balance against invoice before dispatch.</textarea>
+      </div>
+    </div>
+
+    <div class="form-section" style="border-bottom:none;">
+      <h3>Actions</h3>
+      <div class="toolbar-actions">
+        <button class="btn-primary" onclick="openConfirmPreview()">👁️ Preview Bill</button>
+        <button class="btn-danger" onclick="newInvoice()">🆕 New Blank Bill</button>
+      </div>
+      <p id="emailStatus" style="font-size:0.76rem;color:#555;margin-top:8px;"></p>
+    </div>
+
+    <div class="form-section" style="border-bottom:none;">
+      <h3>Saved Bills</h3>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+  </div>
+
+  <!-- ================= CONFIRM OVERLAY ================= -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <p class="confirm-heading">Please check the bill and Confirm  .</p>
+      <div class="invoice" id="invoiceSheet"></div>
+      <div class="confirm-actions">
+        <button class="btn-secondary" onclick="cancelConfirm()">✏️ Edit / Cancel</button>
+        <button class="btn-primary" onclick="confirmAndSend()">✅ Confirm &amp; Print</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+// CONFIG — Ye sab values FIXED hain, har bill mein automatic use
+// hongi. Yahan par ek hi baar update karna, poore software mein
+// apply ho jayega. In fields ko form mein dobara bharna nahi padega.
+// ================================================================
+const CONFIG = {
+  companyName: "PALAK INFRA",
+  pan: "09AMNPU3522A3Z0",       // 👈 bill mein "GST :-" label ke saath dikhega
+  gstNo: "7088170206",          // 👈 bill mein "Contect No. :-" label ke saath dikhega
+  worksAddress: "Block No.8, Shop No.11 Oppt. Kotak Mahindra Bank, Sanjay Place, Agra- 282002 (UP)",             // 👈 apna works/site address yahan daalo
+  hoAddress: "",                // 👈 apna head office address yahan daalo
+  bankName: "HDFC BANK, Trans Yamuna Colony, Agra",
+  accountNo: "50200110300009",
+  ifsc: "HDFC0004134",
+  // 👇 Apna email yahan daalo jab decide ho jaye — bills isi par jayengi
+  ownerEmail: "palak.infra26@gmail.com",
+  // 👇 Default logo (works out of the box). Apna logo lagane ke liye
+  // "logo.png" jaisa file naam likh do (file HTML ke saath rakho).
+  logoUrl: "logo.png",   
+  upiId: "7088170206-3@ybl",
+};
+
+// ===== Auto-incrementing Invoice Number (INV-001, INV-002...) =====
+function getNextInvoiceNumber(consume) {
+  let counter = 0;
+  try {
+    counter = parseInt(localStorage.getItem('invoiceCounter') || '0', 10) || 0;
+  } catch (e) {}
+  const next = counter + 1;
+  if (consume) {
+    try { localStorage.setItem('invoiceCounter', String(next)); } catch (e) {}
+  }
+  return 'INV-' + String(next).padStart(3, '0');
+}
+
+let items = [
+  { name: "SOLAR PANEL STRUCTURE HDGI LEG 7x10 FT", hsn: "7308", qty: 9, rate: 4000, cgst: 2.5, sgst: 2.5 }
+];
+
+let editingIndex = null; // null = adding new item, number = updating that item in-place
+
+function addItem() {
+  const name = document.getElementById('itemName').value.trim();
+  const hsn = document.getElementById('itemHsn').value.trim();
+  const qty = parseFloat(document.getElementById('itemQty').value) || 0;
+  const rate = parseFloat(document.getElementById('itemRate').value) || 0;
+  const cgst = parseFloat(document.getElementById('itemCgst').value) || 0;
+  const sgst = parseFloat(document.getElementById('itemSgst').value) || 0;
+
+  if (!name) {
+    alert('Particulars field khali nahi chhod sakte.');
+    return;
+  }
+
+  if (editingIndex !== null) {
+    items[editingIndex] = { name, hsn, qty, rate, cgst, sgst };
+    editingIndex = null;
+    document.getElementById('addItemBtn').textContent = '+ Add Item to Bill';
+  } else {
+    items.push({ name, hsn, qty, rate, cgst, sgst });
+  }
+
+  document.getElementById('itemName').value = '';
+  document.getElementById('itemHsn').value = '';
+  document.getElementById('itemQty').value = '';
+  document.getElementById('itemRate').value = '';
+  document.getElementById('itemCgst').value = '2.5';
+  document.getElementById('itemSgst').value = '2.5';
+
+  renderItemListUI();
+  render();
+}
+
+function removeItem(index) {
+  items.splice(index, 1);
+  if (editingIndex === index) {
+    editingIndex = null;
+    document.getElementById('addItemBtn').textContent = '+ Add Item to Bill';
+  }
+  renderItemListUI();
+  render();
+}
+
+function editItem(index) {
+  const it = items[index];
+  if (!it) return;
+
+  document.getElementById('itemName').value = it.name;
+  document.getElementById('itemHsn').value = it.hsn;
+  document.getElementById('itemQty').value = it.qty;
+  document.getElementById('itemRate').value = it.rate;
+  document.getElementById('itemCgst').value = it.cgst;
+  document.getElementById('itemSgst').value = it.sgst;
+
+  // Item stays in the list — clicking "Update Item" will update it in place
+  editingIndex = index;
+  document.getElementById('addItemBtn').textContent = '✔ Update Item';
+
+  document.getElementById('itemName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('itemName').focus();
+}
+
+function renderItemListUI() {
+  const el = document.getElementById('itemListUI');
+  if (items.length === 0) {
+    el.innerHTML = '<div style="font-size:0.78rem;color:#888;">Koi item add nahi hua abhi.</div>';
+    return;
+  }
+  el.innerHTML = items.map((it, i) => `
+    <div class="item-list-row">
+      <span class="name">${escapeHtml(it.name)} — Qty ${it.qty} × ₹${it.rate} (CGST ${it.cgst}% + SGST ${it.sgst}%)</span>
+      <span style="display:flex; gap:4px;">
+        <button class="del" style="color:#14477a;" onclick="editItem(${i})" title="Edit">✎</button>
+        <button class="del" onclick="removeItem(${i})" title="Delete">✕</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function getFormValues() {
+  return {
+    companyName: CONFIG.companyName,
+    pan: CONFIG.pan,
+    gstNo: CONFIG.gstNo,
+    worksAddress: CONFIG.worksAddress,
+    hoAddress: CONFIG.hoAddress,
+    invoiceNo: document.getElementById('invoiceNo').value || '',
+    invoiceDate: document.getElementById('invoiceDate').value || '',
+    billToName: document.getElementById('billToName').value || '',
+    billToGst: document.getElementById('billToGst').value || '',
+    shipToName: document.getElementById('shipToName').value || '',
+    shipToGst: document.getElementById('shipToGst').value || '',
+    freight: document.getElementById('freight').value || '',
+    paymentTerms: document.getElementById('paymentTerms').value || '',
+    bankName: CONFIG.bankName,
+    accountNo: CONFIG.accountNo,
+    ifsc: CONFIG.ifsc,
+  };
+}
+
+function setFormValues(v) {
+  document.getElementById('invoiceNo').value = v.invoiceNo || '';
+  document.getElementById('invoiceDate').value = v.invoiceDate || '';
+  document.getElementById('billToName').value = v.billToName || '';
+  document.getElementById('billToGst').value = v.billToGst || '';
+  document.getElementById('shipToName').value = v.shipToName || '';
+  document.getElementById('shipToGst').value = v.shipToGst || '';
+  document.getElementById('freight').value = v.freight || 'Extra';
+  document.getElementById('paymentTerms').value = v.paymentTerms || '';
+}
+
+function render() {
+  const v = getFormValues();
+
+  let subtotal = 0;
+  let totalCgst = 0;
+  let totalSgst = 0;
+  const rows = items.map((it, i) => {
+    const baseAmount = (it.qty || 0) * (it.rate || 0);
+    const itemCgstPct = it.cgst || 0;
+    const itemSgstPct = it.sgst || 0;
+    const cgstAmt = baseAmount * (itemCgstPct / 100);
+    const sgstAmt = baseAmount * (itemSgstPct / 100);
+    const rowTotal = baseAmount + cgstAmt + sgstAmt;
+    subtotal += baseAmount;
+    totalCgst += cgstAmt;
+    totalSgst += sgstAmt;
+    return `
+      <tr>
+        <td class="center">${i + 1}</td>
+        <td>${escapeHtml(it.name)}</td>
+        <td>${escapeHtml(it.hsn)}</td>
+        <td class="num">${it.qty}</td>
+        <td class="num">${it.rate.toFixed(2)}</td>
+        <td class="num">${itemCgstPct}%</td>
+        <td class="num">${cgstAmt.toFixed(2)}</td>
+        <td class="num">${itemSgstPct}%</td>
+        <td class="num">${sgstAmt.toFixed(2)}</td>
+        <td class="num">${rowTotal.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const freightNum = parseFloat(v.freight) || 0;
+  const grandTotal = subtotal + totalCgst + totalSgst + freightNum;
+
+  const dateDisplay = v.invoiceDate
+    ? new Date(v.invoiceDate).toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    : '';
+
+  const html = `
+    <div class="invoice-title">PROFORMA INVOICE</div>
+
+    <div class="top-row">
+      <div class="cell"><b>GST :-</b> <span class="top-value">${escapeHtml(v.pan)}</span></div>
+      <div class="cell"><b>Contect No. :-</b> <span class="top-value">${escapeHtml(v.gstNo)}</span></div>
+    </div>
+
+    <div class="company-block">
+      <img src="${escapeHtml(CONFIG.logoUrl)}" alt="Logo" class="company-logo" onerror="this.style.display='none'">
+      <div class="company-name">${escapeHtml(v.companyName)}</div>
+      <div class="company-sub">
+        <div>${escapeHtml(v.worksAddress)}</div>
+        <div>${escapeHtml(v.hoAddress)}</div>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <div class="cell"><b>Bill No :-</b> ${escapeHtml(v.invoiceNo)}</div>
+      <div class="cell"><b>Date :-</b> ${dateDisplay}</div>
+    </div>
+
+    <div class="bill-ship-row">
+      <div class="cell">
+        <span class="label">Bill To :-</span>
+        <div>${escapeHtml(v.billToName).replace(/\n/g,'<br>')}</div>
+        <div style="margin-top:8px;">GSTIN :- ${escapeHtml(v.billToGst)}</div>
+      </div>
+      <div class="cell">
+        <span class="label">Ship To :-</span>
+        <div>${escapeHtml(v.shipToName).replace(/\n/g,'<br>')}</div>
+        <div style="margin-top:8px;">GSTIN :- ${escapeHtml(v.shipToGst)}</div>
+      </div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:4%">#</th>
+          <th rowspan="2" style="width:24%">Item &amp; Description</th>
+          <th rowspan="2" style="width:9%">HSN/SAC</th>
+          <th rowspan="2" style="width:6%">Qty</th>
+          <th rowspan="2" style="width:9%">Rate</th>
+          <th colspan="2" style="width:14%">CGST</th>
+          <th colspan="2" style="width:14%">SGST</th>
+          <th rowspan="2" style="width:12%">Amount</th>
+        </tr>
+        <tr>
+          <th style="width:6%">%</th>
+          <th style="width:8%">Amt</th>
+          <th style="width:6%">%</th>
+          <th style="width:8%">Amt</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows || '<tr><td colspan="10" style="text-align:center;color:#888;">Koi item add nahi hua</td></tr>'}
+      </tbody>
+    </table>
+
+    <div class="totals-block">
+      <div class="totals-left">
+        <span class="label">Payment Terms</span>
+        <div>${escapeHtml(v.paymentTerms)}</div>
+        <div class="signature-line">${escapeHtml(v.companyName)}</div>
+      </div>
+      <div class="totals-right">
+        <div class="trow"><span>Total</span><span>₹ ${subtotal.toFixed(2)}</span></div>
+        <div class="trow"><span>Freight Charges</span><span>${escapeHtml(v.freight)}</span></div>
+        <div class="trow"><span>Total CGST</span><span>₹ ${totalCgst.toFixed(2)}</span></div>
+        <div class="trow"><span>Total SGST</span><span>₹ ${totalSgst.toFixed(2)}</span></div>
+        <div class="trow"><span>Grand Total</span><span>₹ ${grandTotal.toFixed(2)}</span></div>
+      </div>
+    </div>
+
+    <div class="banking-block">
+      <span class="label">Banking Details :-</span>
+      <div class="banking-grid">
+        <div>${escapeHtml(v.companyName)}</div>
+        <div>For ${escapeHtml(v.companyName)}</div>
+        <div>A/C :- ${escapeHtml(v.accountNo)}</div>
+        <div></div>
+        <div>IFSC :- ${escapeHtml(v.ifsc)}</div>
+        <div style="margin-top:20px;">Authorised Signatory</div>
+        <div>${escapeHtml(v.bankName)}</div>
+        <div></div>
+      </div>
+      <div class="qr-block">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent('upi://pay?pa=' + CONFIG.upiId + '&pn=' + CONFIG.companyName)}" alt="Payment QR Code">
+        <span>Scan to Pay via UPI<br>${escapeHtml(CONFIG.upiId)}${CONFIG.upiId === 'yourupi@okbank' ? '<br><i style="color:#a55;">(placeholder — CONFIG mein UPI ID badlo)</i>' : ''}</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('invoiceSheet').innerHTML = html;
+}
+
+// ===== Email this bill (sends to your own email for records) =====
+async function emailBill() {
+  const email = CONFIG.ownerEmail;
+  if (!email || email === "youremail@example.com") {
+    alert('Pehle CONFIG section mein OWNER_EMAIL apna asli email daalo (script ke shuru mein).');
+    return;
+  }
+
+  const v = getFormValues();
+  let subtotal = 0;
+  let totalCgst = 0;
+  let totalSgst = 0;
+  const itemLines = items.map((it, i) => {
+    const amount = (it.qty || 0) * (it.rate || 0);
+    const cgstAmt = amount * ((it.cgst || 0) / 100);
+    const sgstAmt = amount * ((it.sgst || 0) / 100);
+    subtotal += amount;
+    totalCgst += cgstAmt;
+    totalSgst += sgstAmt;
+    return `${i + 1}. ${it.name} (HSN ${it.hsn || '-'}) — Qty ${it.qty} x Rs.${it.rate} = Rs.${amount.toFixed(2)} | CGST ${it.cgst}% (Rs.${cgstAmt.toFixed(2)}) + SGST ${it.sgst}% (Rs.${sgstAmt.toFixed(2)})`;
+  }).join('\n');
+
+  const freightNum = parseFloat(v.freight) || 0;
+  const grandTotal = subtotal + totalCgst + totalSgst + freightNum;
+
+  const statusEl = document.getElementById('emailStatus');
+  statusEl.textContent = 'Generating PDF...';
+  statusEl.style.color = '#555';
+
+  // Try to generate the visual PDF — but don't let a PDF failure block the email entirely
+  let pdfFile = null;
+  try {
+    const invoiceEl = document.getElementById('invoiceSheet');
+    const pdfBlob = await html2pdf()
+      .set({
+        margin: 0,
+        filename: `${v.invoiceNo || 'Invoice'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'px', format: [850, 1200], orientation: 'portrait' }
+      })
+      .from(invoiceEl)
+      .outputPdf('blob');
+    pdfFile = new File([pdfBlob], `${v.invoiceNo || 'Invoice'}.pdf`, { type: 'application/pdf' });
+  } catch (pdfErr) {
+    pdfFile = null; // PDF failed — email will still go out with just the data table
+  }
+
+  statusEl.textContent = 'Sending...';
+
+  try {
+    const formData = new FormData();
+    formData.append('_subject', `Bill Copy — Invoice ${v.invoiceNo || ''} — ${v.billToName.slice(0,30)}`);
+    formData.append('_template', 'table');
+    formData.append('_captcha', 'false');
+    formData.append('Invoice No', v.invoiceNo);
+    formData.append('Date', v.invoiceDate);
+    formData.append('Company (Seller)', v.companyName);
+    formData.append('Bill To', v.billToName);
+    formData.append('Bill To GSTIN', v.billToGst);
+    formData.append('Ship To', v.shipToName);
+    formData.append('Items', itemLines || 'No items added');
+    formData.append('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
+    formData.append('Total CGST', `Rs. ${totalCgst.toFixed(2)}`);
+    formData.append('Total SGST', `Rs. ${totalSgst.toFixed(2)}`);
+    formData.append('Freight Charges', v.freight);
+    formData.append('Grand Total', `Rs. ${grandTotal.toFixed(2)}`);
+    formData.append('Payment Terms', v.paymentTerms);
+    if (pdfFile) {
+      formData.append('attachment', pdfFile);
+    }
+
+    const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(email)}`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: formData,
+    });
+
+    if (response.ok) {
+      statusEl.textContent = pdfFile
+        ? '✅ Bill emailed with PDF attachment. (Pehli baar ho to inbox check karke confirmation link click karo.)'
+        : '✅ Bill emailed (data table only — PDF nahi ban paayi, internet check kar lena). Pehli baar ho to confirmation link click karo.';
+      statusEl.style.color = '#223b33';
+    } else {
+      throw new Error('Failed');
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Email nahi bheja ja saka. Internet connection check karo.';
+    statusEl.style.color = '#7a2331';
+  }
+}
+
+// ===== Save / Load history (in-browser only) =====
+function getHistory() {
+  try {
+    const raw = localStorage.getItem('billHistory');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// ===== Confirm-preview workflow =====
+function openConfirmPreview() {
+  render();
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function cancelConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+}
+
+async function confirmAndSend() {
+  const v = getFormValues();
+  const record = { ...v, items: JSON.parse(JSON.stringify(items)), savedAt: new Date().toISOString() };
+  const history = getHistory();
+  history.unshift(record);
+
+  const statusEl = document.getElementById('emailStatus');
+
+  try {
+    localStorage.setItem('billHistory', JSON.stringify(history.slice(0, 30)));
+    renderHistoryUI();
+    getNextInvoiceNumber(true); // permanently bump the counter for the next bill
+  } catch (e) {
+    statusEl.textContent = '❌ Could not save locally: ' + e.message;
+    statusEl.style.color = '#7a2331';
+  }
+
+  await emailBill();
+  window.print();
+}
+
+function loadInvoice(index) {
+  const history = getHistory();
+  const record = history[index];
+  if (!record) return;
+  setFormValues(record);
+  items = record.items || [];
+  renderItemListUI();
+  render();
+}
+
+function deleteInvoice(index, ev) {
+  ev.stopPropagation();
+  const history = getHistory();
+  history.splice(index, 1);
+  localStorage.setItem('billHistory', JSON.stringify(history));
+  renderHistoryUI();
+}
+
+function renderHistoryUI() {
+  const history = getHistory();
+  const el = document.getElementById('historyList');
+  if (history.length === 0) {
+    el.innerHTML = '<div style="font-size:0.76rem;color:#888;">Koi saved bill nahi hai.</div>';
+    return;
+  }
+  el.innerHTML = history.map((r, i) => `
+    <div class="history-item" onclick="loadInvoice(${i})">
+      <span>${escapeHtml(r.invoiceNo || 'No.')} — ${escapeHtml(r.billToName || '').slice(0, 24)}</span>
+      <button class="del" onclick="deleteInvoice(${i}, event)">✕</button>
+    </div>
+  `).join('');
+}
+
+function newInvoice() {
+  if (!confirm('Naya blank bill start karein? Unsaved changes lost ho jayenge.')) return;
+  items = [];
+  document.getElementById('invoiceNo').value = getNextInvoiceNumber(false);
+  document.getElementById('invoiceDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('billToName').value = '';
+  document.getElementById('billToGst').value = '';
+  document.getElementById('shipToName').value = '';
+  document.getElementById('shipToGst').value = '';
+  renderItemListUI();
+  render();
+}
+
+// ===== init =====
+document.getElementById('invoiceDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('invoiceNo').value = getNextInvoiceNumber(false);
+renderItemListUI();
+renderHistoryUI();
+render();
+
+// ===== Register service worker for offline/PWA support =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      // Silently ignore if not served over http/https (e.g. opened via file://)
+    });
+  });
+}
+
+</script>
+
+</body>
+</html>
