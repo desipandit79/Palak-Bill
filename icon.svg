@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#14477a"/>
+  <g transform="translate(256,240)">
+    <circle cx="0" cy="0" r="150" fill="none" stroke="#b8862f" stroke-width="12"/>
+    <circle cx="0" cy="0" r="124" fill="none" stroke="#b8862f" stroke-width="4"/>
+    <path d="M-70 -20 L70 -20 M-58 -20 L-58 40 Q-58 68 0 68 Q58 68 58 40 L58 -20" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="0" y1="-70" x2="0" y2="90" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="256" y="440" text-anchor="middle" font-family="Georgia, serif" font-size="52" font-weight="bold" fill="#fff">PALAK</text>
+</svg>
